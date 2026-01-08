@@ -1,0 +1,104 @@
+"use client";
+
+import { useState } from "react";
+import { collection, addDoc } from "firebase/firestore";
+import { db } from "../../services/firebase";
+
+export default function Laporan() {
+  const [siswa, setSiswa] = useState([
+    { nama: "Ayu", absen: "hadir", kanji: "", kosa: "", tata: "", pelanggaran: "" },
+    { nama: "Lina", absen: "izin", kanji: "", kosa: "", tata: "", pelanggaran: "" }
+  ]);
+
+  const update = (i, key, value) => {
+    const copy = [...siswa];
+    copy[i][key] = value;
+    setSiswa(copy);
+  };
+
+  const simpan = async () => {
+    try {
+      for (const s of siswa) {
+        await addDoc(collection(db, "laporan_siswa"), {
+          tanggal: new Date(),
+          siswa: s.nama,
+          absen: s.absen,
+          nilai: s.absen === "hadir" ? {
+            kanji: s.kanji,
+            kosakata: s.kosa,
+            tataBahasa: s.tata
+          } : null,
+          pelanggaran: s.pelanggaran
+        });
+      }
+      alert("Data berhasil disimpan ke database");
+    } catch (err) {
+      alert("Gagal menyimpan data");
+      console.error(err);
+    }
+  };
+
+  return (
+    <div style={{ padding: 20 }}>
+      <h1>Input Laporan Harian (Tes Simpan)</h1>
+
+      <table border="1" cellPadding="8">
+        <thead>
+          <tr>
+            <th>Nama</th>
+            <th>Absen</th>
+            <th>Kanji</th>
+            <th>Kosakata</th>
+            <th>Tata Bahasa</th>
+            <th>Pelanggaran</th>
+          </tr>
+        </thead>
+        <tbody>
+          {siswa.map((s, i) => (
+            <tr key={i}>
+              <td>{s.nama}</td>
+              <td>
+                <select
+                  value={s.absen}
+                  onChange={e => update(i, "absen", e.target.value)}
+                >
+                  <option value="hadir">Hadir</option>
+                  <option value="izin">Izin</option>
+                  <option value="sakit">Sakit</option>
+                  <option value="alfa">Alfa</option>
+                </select>
+              </td>
+              <td>
+                <input
+                  disabled={s.absen !== "hadir"}
+                  onChange={e => update(i, "kanji", e.target.value)}
+                />
+              </td>
+              <td>
+                <input
+                  disabled={s.absen !== "hadir"}
+                  onChange={e => update(i, "kosa", e.target.value)}
+                />
+              </td>
+              <td>
+                <input
+                  disabled={s.absen !== "hadir"}
+                  onChange={e => update(i, "tata", e.target.value)}
+                />
+              </td>
+              <td>
+                <input
+                  onChange={e => update(i, "pelanggaran", e.target.value)}
+                />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <button onClick={simpan} style={{ marginTop: 20 }}>
+        Simpan ke Database
+      </button>
+    </div>
+  );
+}
